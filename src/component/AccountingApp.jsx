@@ -1,56 +1,75 @@
 import React, {Component} from 'react';
-import ListEmployeesComponent from "./employee/ListEmployees";
 import {BrowserRouter as Router, Link, Route, Switch} from "react-router-dom";
-import EmployeeForm from "./employee/EmployeeForm";
-import WardList from "./department/WardList";
-import WardForm from "./department/WardForm";
-import ListProjects from "./project/ListProjects";
-import ProjectForm from "./project/ProjectForm";
-import {DIAGNOSIS_NAVIGATION_LINK, PEOPLE_NAVIGATION_LINK, WARDS_NAVIGATION_LINK} from "./NavigationConsts";
+import GenericList from "./department/GenericList";
+import ApplicationService from "../service/ApplicationService";
+import ReactLoading from "react-loading";
+import GenericForm from "./department/GenericForm";
 
 class AccountingApp extends Component {
+
+    constructor(props) {
+        super(props)
+        this.state = {
+            appName: "",
+            titles: [],
+            loading: true
+        }
+    }
+
+    componentDidMount() {
+        ApplicationService.retrieveConfig()
+            .then(response => {
+                this.setState({
+                    appName: response.data.appName,
+                    titles: response.data.titles,
+                    loading: false
+                })
+            })
+    }
+
     render() {
         return (
             <Router>
-                <div>
-                    <nav id="navbar1" className="navbar navbar-expand navbar-dark bg-dark">
-                        <Link to={"/"} className="navbar-brand">
-                            Cringe poker
-                        </Link>
-                        <div className="navbar-nav mr-auto">
-
-                            <li className="nav-item">
-                                <Link to={PEOPLE_NAVIGATION_LINK} className="nav-link">
-                                    People
-                                </Link>
-                            </li>
-
-                            <li className="nav-item">
-                                <Link to={WARDS_NAVIGATION_LINK} className="nav-link">
-                                    Wards
-                                </Link>
-                            </li>
-                            <li className="nav-item">
-                                <Link to={DIAGNOSIS_NAVIGATION_LINK} className="nav-link">
-                                    Diagnosis
-                                </Link>
-                            </li>
+                {this.state.loading ? (<ReactLoading className="loader" type={"bars"} color={"#b056d6"}/>
+                ) : (
+                    <div>
+                        <nav id="navbar1" className="navbar navbar-expand navbar-dark bg-dark">
+                            <Link to={"/"} className="navbar-brand">
+                                {this.state.appName}
+                            </Link>
+                            <div className="navbar-nav mr-auto">
+                                {this.state.titles.map(title =>
+                                    <li className="nav-item">
+                                        <Link to={title['endpoint']} className="nav-link">
+                                            {title["title"]}
+                                        </Link>
+                                    </li>
+                                )}
+                            </div>
+                        </nav>
+                        <div className="main-container">
+                            <Switch>
+                                {this.state.titles.map(title =>
+                                    <Route key={title['endpoint']} exact path={title['endpoint']}
+                                           render={(props) => (
+                                               <GenericList {...props} endpoint={title['endpoint']}
+                                                            title={title['title']}/>
+                                           )}/>
+                                )}
+                                {this.state.titles.map(title =>
+                                    <Route key={`${title['endpoint']}/:id`} exact path={`${title['endpoint']}/:id`}
+                                           render={(props) => (
+                                               <GenericForm {...props} endpoint={title['endpoint']}
+                                                            title={title['title']}/>
+                                           )}/>
+                                )}
+                            </Switch>
                         </div>
-                    </nav>
-                    <div className="main-container">
-                        <Switch>
-                            <Route path={PEOPLE_NAVIGATION_LINK} exact component={ListEmployeesComponent}/>
-                            <Route path={`${PEOPLE_NAVIGATION_LINK}/:id`} component={EmployeeForm}/>
-                            <Route path={WARDS_NAVIGATION_LINK} exact component={WardList}/>
-                            <Route path={`${WARDS_NAVIGATION_LINK}/:id`} exact component={WardForm}/>
-                            <Route path={DIAGNOSIS_NAVIGATION_LINK} exact component={ListProjects}/>
-                            <Route path={`${DIAGNOSIS_NAVIGATION_LINK}/:id`} exact component={ProjectForm}/>
-                        </Switch>
-                    </div>
-                </div>
+                    </div>)}
             </Router>
         )
     }
 }
+
 
 export default AccountingApp

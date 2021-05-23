@@ -1,6 +1,6 @@
 import React, {Component} from "react";
 import EmployeeDataService from "../../service/EmployeeDataService";
-import DepartmentDataService from "../../service/WardDataService";
+import DepartmentDataService from "../../service/DataService";
 import {withRouter} from "react-router-dom";
 import ReactLoading from "react-loading";
 

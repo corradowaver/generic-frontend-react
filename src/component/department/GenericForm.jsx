@@ -1,43 +1,65 @@
 import React, {Component} from "react";
 import {Field, Form, Formik} from 'formik';
-import WardDataService from "../../service/WardDataService";
+import DataService from "../../service/DataService";
 import ReactLoading from "react-loading";
-import {WARDS_NAVIGATION_LINK} from "../NavigationConsts";
 
-class WardForm extends Component {
+class GenericForm extends Component {
 
     constructor(props) {
         super(props)
         this.state = {
-            id: this.props.match.params.id,
+            id: props.match.params.id,
+            title: props.title,
+            endpoint: props.endpoint,
             data: {},
             message: '',
-            loading: false
+            loading: true
         }
-
+        this.service = new DataService(this.state.endpoint)
         this.onSubmit = this.onSubmit.bind(this)
     }
 
     componentDidMount() {
         if (this.state.id === "new") {
-
+            this.service.retrieveTemplate()
+                .then(response => {
+                    delete response.data['data'][0]
+                    this.setState({
+                        data: response.data['data'],
+                        loading: false
+                    })
+                })
         } else {
-            WardDataService.retrieve(this.state.id)
-                .then(response => this.setState({
-                    data: response.data,
-                }))
+            this.service.retrieve(this.state.id)
+                .then(response => {
+                    this.setState({
+                        data: response.data['data'],
+                        loading: false
+                    })
+                })
         }
     }
 
     onSubmit(values) {
-        let item = values
+        values = values.filter(function( element ) {
+            return element !== undefined;
+        });
+        let item = {}
+        values.forEach(field => {
+            if (field['fieldType'].toLowerCase() === 'boolean') {
+                item[field['fieldName']] = document.getElementById(field['fieldName']).checked
+            } else {
+                item[field['fieldName']] = field['fieldValue']
+            }
+        })
+
         this.setState({loading: true})
         this.setState({message: ''})
         if (this.state.id === "new") {
-            WardDataService.create(item)
+            this.service.create(item)
                 .then(() => {
                         this.setState({loading: false})
-                        this.props.history.push(WARDS_NAVIGATION_LINK)
+                        this.props.history.push(this.state.endpoint)
                     },
                     error => {
                         this.setState({loading: false})
@@ -53,10 +75,10 @@ class WardForm extends Component {
                         });
                     })
         } else {
-            WardDataService.update(this.state.id, item)
-                .then(() => {
+            this.service.update(item)
+                .then((res) => {
                         this.setState({loading: false})
-                        this.props.history.push(WARDS_NAVIGATION_LINK)
+                        this.props.history.push(this.state.endpoint)
                     },
                     error => {
                         this.setState({loading: false})
@@ -79,12 +101,12 @@ class WardForm extends Component {
 
         return (
             <div className="form">
-                <h3>Ward details</h3>
+                <h3>{this.state.title} details</h3>
                 {loading ? (<ReactLoading className="loader" type={"bars"} color={"#b056d6"}/>
                 ) : (
                     <div className="formik">
                         <Formik
-                            initialValues={{data}}
+                            initialValues={data}
                             onSubmit={this.onSubmit}
                             validateOnChange={false}
                             validateOnBlur={false}
@@ -99,12 +121,13 @@ class WardForm extends Component {
                                                 </div>
                                             </div>
                                         )}
-                                        {data.map(element => (
-                                            <fieldset className="form-group">
-                                                <label>{element.key}</label>
-                                                <Field className="form-control" type="text" name={element.key}/>
-                                            </fieldset>
-                                        ))}
+                                        {data.map(field => (
+                                                <fieldset className="form-group">
+                                                    <label>{field['fieldName']}</label>
+                                                    {this.getFieldComponent(field)}
+                                                </fieldset>
+                                            )
+                                        )}
                                         {errors.name && (
                                             <div className="alert alert-danger" role="alert">
                                                 {errors.name}
@@ -122,4 +145,4 @@ class WardForm extends Component {
 
 }
 
-export default WardForm
+export default GenericForm
