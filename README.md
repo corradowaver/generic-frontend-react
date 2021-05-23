@@ -1,6 +1,3 @@
-# [Currently on heroku](https://react-accounting-client.herokuapp.com/)
-## Available Scripts
-
 In the project directory, you can run:
 
 ### `npm start`
