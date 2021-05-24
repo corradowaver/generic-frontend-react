@@ -11,7 +11,7 @@ class GenericForm extends Component {
             id: props.match.params.id,
             title: props.title,
             endpoint: props.endpoint,
-            data: {},
+            data: [],
             message: '',
             loading: true
         }
@@ -47,7 +47,8 @@ class GenericForm extends Component {
         let item = {}
         values.forEach(field => {
             if (field['fieldType'].toLowerCase() === 'boolean') {
-                item[field['fieldName']] = document.getElementById(field['fieldName']).checked
+                // item[field['fieldName']] = document.getElementById(field['fieldName']).checked
+                item[field['fieldName']] = field['fieldValue']
             } else {
                 item[field['fieldName']] = field['fieldValue']
             }
@@ -76,7 +77,7 @@ class GenericForm extends Component {
                     })
         } else {
             this.service.update(item)
-                .then((res) => {
+                .then(() => {
                         this.setState({loading: false})
                         this.props.history.push(this.state.endpoint)
                     },
@@ -96,9 +97,16 @@ class GenericForm extends Component {
         }
     }
 
+    resolveFormElementType = (field) => {
+        if (field['fieldType'].toLowerCase() === "boolean") {
+            return "checkbox";
+        } else {
+            return "text";
+        }
+    }
+
     render() {
         let {loading, message, data} = this.state
-
         return (
             <div className="form">
                 <h3>{this.state.title} details</h3>
@@ -124,7 +132,13 @@ class GenericForm extends Component {
                                         {data.map(field => (
                                                 <fieldset className="form-group">
                                                     <label>{field['fieldName']}</label>
-                                                    {this.getFieldComponent(field)}
+                                                    <Field className="form-control"
+                                                           type={this.resolveFormElementType(field)}
+                                                           name={field['fieldName']}
+                                                           placeholder={field['fieldValue']}
+                                                           onChange={(e) => {
+                                                               field['fieldValue'] = e.target.value
+                                                           }}/>
                                                 </fieldset>
                                             )
                                         )}
